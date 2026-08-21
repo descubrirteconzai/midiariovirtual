@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>DescubrirTe · Diario guiado</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<meta name="theme-color" content="#FBEAE3" />
+<meta name="description" content="Diario guiado de mañana y noche que detecta los patrones que se repiten en lo que sentís." />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="DescubrirTe" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Jost:wght@300;400;500;600&family=Parisienne&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    background: #2b2230;
+    background: radial-gradient(120% 100% at 50% 0%, #5a4a55 0%, #2b2230 70%);
+    font-family: 'Jost', system-ui, sans-serif;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  #root { width: 100%; height: 100%; }
+  textarea, input { font-family: inherit; }
+  textarea:focus, input:focus { border-color: var(--primary) !important; }
+  button { font-family: inherit; }
+  ::selection { background: rgba(226,143,143,0.3); }
+
+  .dt-press { transition: transform .12s ease; }
+  .dt-press:active { transform: scale(0.975); }
+  .dt-tap { transition: opacity .15s ease, background .15s ease; }
+  .dt-tap:active { opacity: 0.6; }
+
+  @keyframes dtFade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes dtUp { from { transform: translateY(46px); } to { transform: translateY(0); } }
+  @keyframes dtIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* tidy scrollbars inside the phone */
+  ::-webkit-scrollbar { width: 0; height: 0; }
+</style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <!-- starters -->
+  <script type="text/babel" src="frames/ios-frame.jsx"></script>
+  <script type="text/babel" src="frames/android-frame.jsx"></script>
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+
+  <!-- app modules (dependency order) -->
+  <script type="text/babel" src="app/brand.jsx"></script>
+  <script type="text/babel" src="app/analysis.jsx"></script>
+  <script type="text/babel" src="app/storage.jsx"></script>
+  <script type="text/babel" src="app/ui.jsx"></script>
+  <script type="text/babel" src="app/pwa.jsx"></script>
+  <script type="text/babel" src="app/reminders.jsx"></script>
+  <script type="text/babel" src="app/export.jsx"></script>
+  <script type="text/babel" src="app/checkin.jsx"></script>
+  <script type="text/babel" src="app/program.jsx"></script>
+  <script type="text/babel" src="app/exercise.jsx"></script>
+  <script type="text/babel" src="app/patterns.jsx"></script>
+  <script type="text/babel" src="app/screens.jsx"></script>
+  <script type="text/babel" src="app/app.jsx"></script>
+</body>
+</html>

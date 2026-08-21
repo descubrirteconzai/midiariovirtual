@@ -1,0 +1,25 @@
+{
+  "name": "DescubrirTe · Diario guiado",
+  "short_name": "DescubrirTe",
+  "description": "Diario guiado de mañana y noche que detecta automáticamente los patrones que se repiten en lo que sentís.",
+  "lang": "es",
+  "dir": "ltr",
+  "start_url": "DescubrirTe.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "fullscreen"],
+  "orientation": "portrait",
+  "background_color": "#FBEAE3",
+  "theme_color": "#FBEAE3",
+  "categories": ["lifestyle", "health", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Escribir mi mañana", "short_name": "Mañana", "url": "DescubrirTe.html?checkin=morning", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Cerrar mi día", "short_name": "Noche", "url": "DescubrirTe.html?checkin=night", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Ver mis patrones", "short_name": "Patrones", "url": "DescubrirTe.html?tab=patterns", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
