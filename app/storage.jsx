@@ -12,6 +12,7 @@ function dtDefaultState() {
     currentDay: 1,
     onboarded: false,
     usedDemo: false,
+    palette: 'rosa',
     reminders: { on: false, morning: '08:00', night: '22:00' },
   };
 }
@@ -20,7 +21,10 @@ function dtLoad() {
   try {
     const raw = localStorage.getItem(DT_KEY);
     if (!raw) return dtDefaultState();
-    return { ...dtDefaultState(), ...JSON.parse(raw) };
+    const s = { ...dtDefaultState(), ...JSON.parse(raw) };
+    s.cycleLength = 7;                                  // ciclos de 7 días
+    if (s.currentDay > 7) s.currentDay = 7;
+    return s;
   } catch (e) { return dtDefaultState(); }
 }
 

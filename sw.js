@@ -10,7 +10,7 @@ const LOCAL = [
   './app/program.jsx', './app/exercise.jsx',
   './app/patterns.jsx', './app/screens.jsx', './app/app.jsx',
   './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png',
-  './icons/apple-touch-icon.png',
+  './icons/apple-touch-icon.png', './icons/badge-96.png',
 ];
 const REMOTE = [
   'https://unpkg.com/react@18.3.1/umd/react.development.js',
@@ -115,7 +115,7 @@ async function checkDue() {
         body: COPY[mode].body,
         tag: 'dt-' + mode,
         icon: './icons/icon-192.png',
-        badge: './icons/icon-192.png',
+        badge: './icons/badge-96.png',
         requireInteraction: true,
         data: { mode },
         actions: [{ action: 'write', title: 'Escribir ahora' }],
@@ -153,8 +153,8 @@ self.addEventListener('push', e => {
   try { if (e.data) payload = e.data.json(); } catch (err) {}
   const c = COPY[payload.mode] || COPY.morning;
   e.waitUntil(self.registration.showNotification(c.title, {
-    body: c.body, icon: './icons/icon-192.png', tag: 'dt-' + payload.mode,
-    data: { mode: payload.mode },
+    body: c.body, icon: './icons/icon-192.png', badge: './icons/badge-96.png',
+    tag: 'dt-' + payload.mode, data: { mode: payload.mode },
   }));
 });
 

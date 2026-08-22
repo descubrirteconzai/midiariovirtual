@@ -52,10 +52,24 @@ async function dtAskNotify() {
   try { return await Notification.requestPermission(); } catch (e) { return 'denied'; }
 }
 
-function dtNotify(title, body) {
+function dtNotify(title, body, mode) {
+  // Prefer the service worker: su notificación queda en la barra del sistema
+  // y sobrevive aunque la app se cierre.
+  try {
+    if ('serviceWorker' in navigator && Notification.permission === 'granted') {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification(title, {
+          body, tag: 'dt-' + (mode || 'now'),
+          icon: 'icons/icon-192.png', badge: 'icons/badge-96.png',
+          requireInteraction: true, data: { mode },
+        });
+      }).catch(() => {});
+      return true;
+    }
+  } catch (e) {}
   try {
     if ('Notification' in window && Notification.permission === 'granted') {
-      new Notification(title, { body, tag: 'descubrirte' });
+      new Notification(title, { body, tag: 'descubrirte', icon: 'icons/icon-192.png' });
       return true;
     }
   } catch (e) {}

@@ -78,7 +78,10 @@ function DTApp() {
 
   aUseEffect(() => { dtSave(state); }, [state]);
 
-  const name = (t.userName || '').trim();
+  const name = (state.name != null && state.name !== '' ? state.name : (t.userName || '')).trim();
+  const paletteKey = DT_PALETTES[state.palette] ? state.palette : t.palette;
+  const setName = (v) => setState(s => ({ ...s, name: v }));
+  const setPalette = (k) => setState(s => ({ ...s, palette: k }));
   const filled = dtFilledDays(state);
   const unlocked = filled >= 3;
   const reminders = state.reminders || dtDefaultReminders();
@@ -89,7 +92,8 @@ function DTApp() {
     const isM = mode === 'morning';
     dtNotify(
       isM ? 'Tu momento de la mañana' : 'Tu momento de la noche',
-      isM ? 'Encontrate con vos antes de empezar el día.' : 'Cerrá tu día escribiendo cómo te fue.'
+      isM ? 'Encontrate con vos antes de empezar el día.' : 'Cerrá tu día escribiendo cómo te fue.',
+      mode
     );
     setAlarm(mode);
   };
@@ -168,15 +172,23 @@ function DTApp() {
 
   // ── export ──
   const openExport = () => {
-    const canvas = dtBuildSummary(state, t.palette, name);
+    const canvas = dtBuildSummary(state, paletteKey, name);
     canvasRef.current = canvas;
     setExportImg(canvas.toDataURL('image/png'));
     setExportOpen(true);
   };
 
   // ── actions ──
-  const startJourney = (cycle) => {
-    setState(s => ({ ...s, cycleLength: cycle, onboarded: true, startDate: new Date().toISOString() }));
+  const startJourney = (chosenName) => {
+    setState(s => ({ ...s, name: (chosenName || '').trim(), cycleLength: 7,
+      onboarded: true, currentDay: 1, startDate: new Date().toISOString() }));
+  };
+  // Empezar una semana nueva: se conservan nombre, paleta y recordatorios.
+  const startWeek = () => {
+    setState(s => ({ ...s, cycleLength: 7, entries: {}, currentDay: 1, usedDemo: false,
+      onboarded: true, startDate: new Date().toISOString() }));
+    setTab('home');
+    setSettings(false);
   };
   const openCheckin = (mode, day = state.currentDay) => { setCheckin({ mode, day }); setDetailDay(null); };
   const openExercise = (day = state.currentDay) => { setExercise(day); setDetailDay(null); };
@@ -201,11 +213,10 @@ function DTApp() {
   };
   const loadDemo = () => { setState(s => dtSeedDemo(s)); setTab('patterns'); setSettings(false); };
   const resetAll = () => { dtReset(); setState(dtDefaultState()); setTab('home'); setSettings(false); };
-  const setCycle = (n) => setState(s => ({ ...s, cycleLength: n, currentDay: Math.min(s.currentDay, n) }));
 
   // theme vars
   const dev = DT_DEVICES[t.device] || DT_DEVICES.iPhone;
-  const rootVars = { ...dtThemeVars(t.palette), ...dtPromptVars(t.promptFont),
+  const rootVars = { ...dtThemeVars(paletteKey), ...dtPromptVars(t.promptFont),
     '--sbar': standalone ? '10px' : dev.sbar };
   const patternsRich = tab === 'patterns' && unlocked;
   const statusDark = patternsRich;
@@ -251,8 +262,31 @@ function DTApp() {
             {/* Settings sheet */}
             <DTSheet open={settings} onClose={() => setSettings(false)} title="Ajustes">
               <label style={dtSlabel()}>Tu nombre</label>
-              <input value={t.userName} onChange={e => setTweak('userName', e.target.value)}
+              <input value={state.name || ''} onChange={e => setName(e.target.value)}
                 placeholder="¿Cómo querés que te llame?" style={dtInput()} />
+
+              <label style={{ ...dtSlabel(), marginTop: 22 }}>Paleta de colores</label>
+              <div style={{ display: 'flex', gap: 10 }}>
+                {Object.keys(DT_PALETTES).map(k => {
+                  const p = DT_PALETTES[k];
+                  const on = paletteKey === k;
+                  return (
+                    <button key={k} onClick={() => setPalette(k)} className="dt-press"
+                      style={{ flex: 1, cursor: 'pointer', borderRadius: 16, padding: '12px 8px 10px',
+                        border: '1.5px solid ' + (on ? p.primary : 'var(--line)'),
+                        background: on ? p.softBg : 'transparent', textAlign: 'center' }}>
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: 3, marginBottom: 8 }}>
+                        {p.swatch.map(c => (
+                          <span key={c} style={{ width: 13, height: 13, borderRadius: 99, background: c,
+                            boxShadow: 'inset 0 0 0 1px rgba(76,82,112,.12)' }} />
+                        ))}
+                      </div>
+                      <div style={{ fontFamily: 'var(--f-sans)', fontSize: 11.5,
+                        fontWeight: on ? 700 : 500, color: 'var(--ink)', lineHeight: 1.2 }}>{p.label}</div>
+                    </button>
+                  );
+                })}
+              </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 22 }}>
                 <div style={{ flex: 1 }}>
@@ -282,19 +316,8 @@ function DTApp() {
                   install={inst.install} isIOS={inst.isIOS} />
               </div>
 
-              <label style={{ ...dtSlabel(), marginTop: 22 }}>Duración del ciclo</label>
-              <div style={{ display: 'flex', gap: 10 }}>
-                {[7, 21].map(n => (
-                  <button key={n} onClick={() => setCycle(n)} className="dt-tap"
-                    style={{ flex: 1, border: '1.5px solid ' + (state.cycleLength === n ? 'var(--primary)' : 'var(--line)'),
-                      background: state.cycleLength === n ? 'var(--soft-bg)' : 'transparent', borderRadius: 14,
-                      padding: '12px', cursor: 'pointer', fontFamily: 'var(--f-sans)', fontWeight: 600,
-                      color: 'var(--ink)' }}>{n} días</button>
-                ))}
-              </div>
-
               <div style={{ marginTop: 22, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <DTButton variant="soft" onClick={loadDemo}>Cargar semana de ejemplo</DTButton>
+                <DTButton variant="soft" onClick={startWeek}>Iniciar semana</DTButton>
                 <DTButton variant="ghost" onClick={resetAll}>Reiniciar mi viaje</DTButton>
               </div>
               <p style={{ fontFamily: 'var(--f-sans)', fontSize: 12, color: 'var(--ink-faint)',
@@ -347,11 +370,11 @@ function DTApp() {
   const tweaks = (
         <TweaksPanel>
           <TweakSection label="Apariencia" />
-          <TweakColor label="Paleta" value={DT_PALETTES[t.palette].swatch}
+          <TweakColor label="Paleta" value={DT_PALETTES[paletteKey].swatch}
             options={Object.keys(DT_PALETTES).map(k => DT_PALETTES[k].swatch)}
             onChange={(arr) => {
               const key = Object.keys(DT_PALETTES).find(k => DT_PALETTES[k].swatch.join() === arr.join());
-              if (key) setTweak('palette', key);
+              if (key) { setTweak('palette', key); setPalette(key); }
             }} />
           <TweakRadio label="Decoración" value={t.decor}
             options={['acuarela', 'lineas', 'minimo']}
@@ -365,8 +388,8 @@ function DTApp() {
             options={['serif', 'script', 'sans']}
             onChange={(v) => setTweak('promptFont', v)} />
           <TweakSection label="Personal" />
-          <TweakText label="Tu nombre" value={t.userName}
-            onChange={(v) => setTweak('userName', v)} placeholder="Sofía" />
+          <TweakText label="Tu nombre" value={state.name || ''}
+            onChange={(v) => setName(v)} placeholder="Sofía" />
         </TweaksPanel>
   );
 

@@ -30,7 +30,7 @@ function DTDecor({ mode = 'acuarela' }) {
 
 // ── Welcome / onboarding ───────────────────────────────────────
 function DTWelcome({ onStart, decor }) {
-  const [cycle, setCycle] = React.useState(7);
+  const [nameDraft, setNameDraft] = React.useState('');
   return (
     <div style={{ position: 'relative', minHeight: '100%', background: 'var(--bg)',
       display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -56,26 +56,17 @@ function DTWelcome({ onStart, decor }) {
 
         <div style={{ marginTop: 30 }}>
           <div style={{ fontFamily: 'var(--f-sans)', fontSize: 13, fontWeight: 600, color: 'var(--ink)',
-            marginBottom: 12, letterSpacing: 0.4 }}>Elegí la duración de tu viaje</div>
-          <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
-            {[7, 21].map(n => {
-              const on = cycle === n;
-              return (
-                <button key={n} onClick={() => setCycle(n)} className="dt-press"
-                  style={{ flex: 1, border: '1.5px solid ' + (on ? 'var(--primary)' : 'var(--line)'),
-                    background: on ? 'var(--surface)' : 'transparent', borderRadius: 20, padding: '16px 10px',
-                    cursor: 'pointer', textAlign: 'left',
-                    boxShadow: on ? '0 12px 26px -16px var(--primary)' : 'none' }}>
-                  <div style={{ fontFamily: 'var(--f-serif)', fontSize: 30, fontWeight: 700,
-                    color: on ? 'var(--primary)' : 'var(--ink)', lineHeight: 1 }}>{n}</div>
-                  <div style={{ fontFamily: 'var(--f-sans)', fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 4 }}>
-                    {n === 7 ? 'una semana · probar' : 'un hábito · profundizar'}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-          <DTButton onClick={() => onStart(cycle)}>Comenzar mi viaje</DTButton>
+            marginBottom: 10, letterSpacing: 0.4 }}>¿Cómo querés que te llame?</div>
+          <input value={nameDraft} onChange={e => setNameDraft(e.target.value)}
+            placeholder="Tu nombre" style={{ width: '100%', boxSizing: 'border-box',
+              border: '1px solid var(--line)', borderRadius: 16, padding: '14px 16px',
+              fontFamily: 'var(--f-sans)', fontSize: 16, color: 'var(--ink)',
+              background: 'var(--surface)', outline: 'none', marginBottom: 16 }} />
+          <DTButton onClick={() => onStart(nameDraft.trim())}>Comenzar mi viaje</DTButton>
+          <p style={{ fontFamily: 'var(--f-sans)', fontSize: 12, color: 'var(--ink-faint)',
+            textAlign: 'center', margin: '12px 0 0' }}>
+            Un ciclo de 7 días. Todo se guarda solo en tu teléfono.
+          </p>
         </div>
       </div>
     </div>
@@ -158,21 +149,13 @@ function DTHome({ state, onOpen, onSettings, onExercise, decor }) {
           </div>
         </DTCard>
 
-        {/* Today's check-ins */}
+        {/* Today: morning → exercise → night */}
         <div style={{ marginTop: 22, marginBottom: 10 }}>
           <DTEyebrow>Hoy</DTEyebrow>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <CheckRow mode="morning" done={st.morning} />
-          <CheckRow mode="night" done={st.night} />
-        </div>
-
-        {/* Guided exercise of the day */}
-        {onExercise && dtProgramDay(day) && (
-          <>
-            <div style={{ marginTop: 22, marginBottom: 10 }}>
-              <DTEyebrow>Ejercicio del día</DTEyebrow>
-            </div>
+          {onExercise && dtProgramDay(day) && (
             <DTCard onClick={onExercise} style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
               <div style={{ width: 46, height: 46, borderRadius: 14, flexShrink: 0, display: 'grid',
                 placeItems: 'center', background: 'var(--soft-bg)' }}>
@@ -181,7 +164,7 @@ function DTHome({ state, onOpen, onSettings, onExercise, decor }) {
               <div style={{ flex: 1 }}>
                 <div style={{ fontFamily: 'var(--f-sans)', fontSize: 12, fontWeight: 600, letterSpacing: 1,
                   textTransform: 'uppercase', color: 'var(--ink-faint)' }}>
-                  Día {day} · {dtProgramDay(day).minutes} min
+                  Ejercicio del día · {dtProgramDay(day).minutes} min
                 </div>
                 <div style={{ fontFamily: 'var(--f-serif)', fontStyle: 'italic', fontSize: 19,
                   color: 'var(--ink)', fontWeight: 600, lineHeight: 1.2 }}>
@@ -199,8 +182,9 @@ function DTHome({ state, onOpen, onSettings, onExercise, decor }) {
                   stroke="var(--ink-faint)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
               )}
             </DTCard>
-          </>
-        )}
+          )}
+          <CheckRow mode="night" done={st.night} />
+        </div>
 
         {/* Daily intention quote */}
         <div style={{ marginTop: 22, padding: '4px 8px', textAlign: 'center' }}>
@@ -292,12 +276,17 @@ function DTDayDetail({ state, day, onCheckin, onExercise }) {
                   {sec.data.sleep ? ` · sueño ${sec.data.sleep}/5` : ''}
                 </span>
               </div>
-              {DT_QUESTIONS[sec.key].map(q => sec.data.answers?.[q.id] && (
-                <div key={q.id} style={{ marginBottom: 10 }}>
-                  <div style={{ fontFamily: 'var(--f-sans)', fontSize: 12, color: 'var(--ink-faint)', marginBottom: 2 }}>{q.text}</div>
-                  <div style={{ fontFamily: 'var(--f-serif)', fontSize: 16, color: 'var(--ink)', lineHeight: 1.4 }}>{sec.data.answers[q.id]}</div>
-                </div>
-              ))}
+              {Object.keys(sec.data.answers || {}).map(qid => {
+                const val = sec.data.answers[qid];
+                if (!val || !String(val).trim()) return null;
+                const q = DT_Q_BY_ID[qid];
+                return (
+                  <div key={qid} style={{ marginBottom: 10 }}>
+                    <div style={{ fontFamily: 'var(--f-sans)', fontSize: 12, color: 'var(--ink-faint)', marginBottom: 2 }}>{q ? q.text : ''}</div>
+                    <div style={{ fontFamily: 'var(--f-serif)', fontSize: 16, color: 'var(--ink)', lineHeight: 1.4 }}>{val}</div>
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <div style={{ fontFamily: 'var(--f-sans)', fontSize: 13.5, color: 'var(--ink-faint)', fontStyle: 'italic' }}>

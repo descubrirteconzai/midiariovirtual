@@ -70,8 +70,8 @@ function DTExercise({ day, initial, onSave, onClose }) {
         padding: '0 22px 10px' }}>
         <h1 style={{ fontFamily: 'var(--f-script)', fontSize: 38, color: 'var(--ink)',
           margin: '0 0 10px', lineHeight: 1.05 }}>{prog.title}</h1>
-        <p style={{ fontFamily: 'var(--f-sans)', fontSize: 12.5, color: 'var(--ink-faint)',
-          margin: '0 0 22px', lineHeight: 1.5 }}>
+        <p style={{ fontFamily: 'var(--f-sans)', fontSize: 13, fontWeight: 500,
+          color: 'var(--hint, var(--ink))', margin: '0 0 22px', lineHeight: 1.5 }}>
           Escribilo acá — y si te hace bien, hacelo primero a mano y volcalo después.
         </p>
 

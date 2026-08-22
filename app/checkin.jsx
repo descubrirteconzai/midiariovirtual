@@ -4,7 +4,7 @@ const { useState: dtUseState } = React;
 function DTCheckin({ mode, day, initial, onSave, onClose, name }) {
   // mode: 'morning' | 'night'
   const isMorning = mode === 'morning';
-  const questions = DT_QUESTIONS[mode];
+  const questions = dtQuestionsFor(mode, day);
   // steps: [mood] (+[scales for morning]) + one per question
   const preSteps = isMorning ? ['mood', 'scales'] : ['mood'];
   const steps = [...preSteps, ...questions.map(q => q.id)];
