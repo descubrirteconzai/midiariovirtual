@@ -67,6 +67,7 @@ function DTApp() {
   const [settings, setSettings] = aUseState(false);
   const [detailDay, setDetailDay] = aUseState(null);
   const [alarm, setAlarm] = aUseState(null);
+  const [alarmStatus, setAlarmStatus] = aUseState({ triggers: false, scheduled: 0 });
   const [exportOpen, setExportOpen] = aUseState(false);
   const [exportImg, setExportImg] = aUseState(null);
   const [notifyState, setNotifyState] = aUseState(
@@ -111,10 +112,14 @@ function DTApp() {
       const d = e.data || {};
       if (d.type === 'open-checkin' && (d.mode === 'morning' || d.mode === 'night')) {
         setCheckin({ mode: d.mode, day: state.currentDay });
+      } else if (d.type === 'alarm-status') {
+        setAlarmStatus({ triggers: !!d.triggers, scheduled: d.scheduled || 0 });
       }
     };
     navigator.serviceWorker && navigator.serviceWorker.addEventListener('message', onMsg);
-    const onVis = () => { if (document.visibilityState === 'visible') dtCheckDue(); };
+    const onVis = () => {
+      if (document.visibilityState === 'visible') { dtCheckDue(); dtAskAlarmStatus(); }
+    };
     document.addEventListener('visibilitychange', onVis);
     return () => {
       navigator.serviceWorker && navigator.serviceWorker.removeEventListener('message', onMsg);
@@ -167,7 +172,8 @@ function DTApp() {
   const snooze = () => {
     const mode = alarm;
     setAlarm(null);
-    setTimeout(() => fireAlarm(mode), 10 * 60 * 1000);
+    dtSnoozeBg(mode);                                   // suena aunque cierre la app
+    setTimeout(() => fireAlarm(mode), 10 * 60 * 1000);  // y también si sigue abierta
   };
 
   // ── export ──
@@ -306,9 +312,41 @@ function DTApp() {
               {reminders.on && notifyState === 'denied' && (
                 <p style={{ fontFamily: 'var(--f-sans)', fontSize: 12, color: 'var(--primary-deep)',
                   margin: '10px 0 0', lineHeight: 1.45 }}>
-                  Las notificaciones del sistema están bloqueadas. Te avisaré dentro de la app
-                  mientras esté abierta.
+                  Las notificaciones del sistema están bloqueadas. Activalas en los ajustes del
+                  teléfono para que la alarma suene con la app cerrada.
                 </p>
+              )}
+
+              {reminders.on && (
+                <div style={{ marginTop: 12, padding: '13px 15px', background: 'var(--surface-2)',
+                  border: '1px solid var(--line)', borderRadius: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: 99, flexShrink: 0,
+                      background: alarmStatus.scheduled > 0 ? 'var(--primary)' : 'var(--ink-faint)' }} />
+                    <div style={{ fontFamily: 'var(--f-sans)', fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>
+                      {alarmStatus.scheduled > 0
+                        ? 'Alarmas programadas en el teléfono'
+                        : 'Alarma con la app cerrada'}
+                    </div>
+                  </div>
+                  <p style={{ fontFamily: 'var(--f-sans)', fontSize: 12, color: 'var(--ink-faint)',
+                    margin: '6px 0 0', lineHeight: 1.5 }}>
+                    {alarmStatus.scheduled > 0
+                      ? `Las próximas ${alarmStatus.scheduled} alarmas ya están agendadas: suenan solas, sin abrir la app.`
+                      : 'Sonará en la barra de notificaciones. Si tu teléfono duerme la app, agregala también a tu calendario y la alarma nunca falla.'}
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
+                    <DTButton variant="soft" style={{ fontSize: 14 }}
+                      onClick={async () => {
+                        const res = await dtAskNotify(); setNotifyState(res);
+                        if (res === 'granted') { dtTestAlarm('morning'); dtChime(); dtAskAlarmStatus(); }
+                      }}>Probar la alarma ahora</DTButton>
+                    <DTButton variant="ghost" style={{ fontSize: 14 }}
+                      onClick={() => dtDownloadIcs(reminders)}>
+                      Agregar a la alarma del teléfono
+                    </DTButton>
+                  </div>
+                </div>
               )}
 
               <div style={{ marginTop: 14 }}>

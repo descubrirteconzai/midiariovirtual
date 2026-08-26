@@ -135,6 +135,34 @@ function dtQuestionsFor(mode, day) {
   return dtSeededPick(DT_MORNING_POOL, 3, day || 1);
 }
 
+// Primera pregunta (la del ánimo): va alternando día tras día.
+const DT_MOOD_LEADS = {
+  morning: [
+    '¿Con qué ánimo llegás a este momento?',
+    '¿Cómo está tu ánimo hoy?',
+    '¿Cómo amaneció tu ánimo?',
+    '¿Cómo te sentís al despertar?',
+    '¿Cómo te encuentra hoy la mañana?',
+    '¿Cómo estás llegando a este día?',
+    '¿Cómo te sentís ahora mismo?',
+  ],
+  night: [
+    '¿Con qué ánimo cerrás el día?',
+    '¿Cómo te sentís ahora que el día termina?',
+    '¿Cómo estuvo tu ánimo hoy?',
+    '¿Cómo llegás al final del día?',
+    '¿Cómo te sentís esta noche?',
+    '¿Cómo está tu ánimo en este momento?',
+    '¿Cómo te deja el día de hoy?',
+  ],
+};
+
+function dtMoodQuestionFor(mode, day) {
+  const pool = DT_MOOD_LEADS[mode === 'night' ? 'night' : 'morning'];
+  const i = ((Number(day) || 1) - 1) % pool.length;
+  return pool[i < 0 ? 0 : i];
+}
+
 // ── Guided questions ───────────────────────────────────────────
 const DT_QUESTIONS = {
   morning: DT_MORNING_POOL.slice(0, 3),
@@ -205,4 +233,5 @@ function dtThemeVars(palette, textScale = 1) {
 Object.assign(window, {
   DT_PALETTES, DT_PROMPT_FONTS, DT_FONTS, DT_MOODS, DT_QUESTIONS, DT_BRAND, dtThemeVars,
   DT_MORNING_POOL, DT_Q_BY_ID, dtQuestionsFor, dtSeededPick,
+  DT_MOOD_LEADS, dtMoodQuestionFor,
 });

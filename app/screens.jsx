@@ -188,8 +188,8 @@ function DTHome({ state, onOpen, onSettings, onExercise, decor }) {
 
         {/* Daily intention quote */}
         <div style={{ marginTop: 22, padding: '4px 8px', textAlign: 'center' }}>
-          <p style={{ fontFamily: 'var(--f-serif)', fontStyle: 'italic', fontSize: 18, color: 'var(--ink-soft)',
-            margin: 0, lineHeight: 1.5, textWrap: 'pretty' }}>
+          <p style={{ fontFamily: 'var(--f-serif)', fontStyle: 'italic', fontSize: 20.5, color: 'var(--ink)',
+            margin: 0, lineHeight: 1.45, textWrap: 'pretty' }}>
             “{DT_BRAND.tagline}.”
           </p>
         </div>

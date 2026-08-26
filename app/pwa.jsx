@@ -48,6 +48,74 @@ function dtCheckDue() {
   }).catch(() => {});
 }
 
+function dtPostSW(msg) {
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.ready.then(reg => {
+    const target = reg.active || navigator.serviceWorker.controller;
+    if (target) target.postMessage(msg);
+  }).catch(() => {});
+}
+
+// Alarma de prueba: sale por la barra del sistema, con sonido y vibración.
+function dtTestAlarm(mode) { dtPostSW({ type: 'test-alarm', mode: mode || 'morning' }); }
+// Posponer 10 min incluso con la app cerrada.
+function dtSnoozeBg(mode) { dtPostSW({ type: 'snooze', mode: mode || 'morning' }); }
+function dtAskAlarmStatus() { dtPostSW({ type: 'alarm-status?' }); }
+
+// ¿El navegador puede disparar alarmas programadas sin abrir la app?
+function dtSupportsScheduled() {
+  try { return 'showTrigger' in Notification.prototype; } catch (e) { return false; }
+}
+
+// Respaldo universal (sobre todo iPhone): un archivo de calendario con
+// alarma diaria. El teléfono suena aunque la app nunca se abra.
+function dtIcsText(reminders) {
+  const pad = n => String(n).padStart(2, '0');
+  const now = new Date();
+  const stamp = now.getUTCFullYear() + pad(now.getUTCMonth() + 1) + pad(now.getUTCDate()) +
+    'T' + pad(now.getUTCHours()) + pad(now.getUTCMinutes()) + pad(now.getUTCSeconds()) + 'Z';
+  const day = now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate());
+  const ev = (mode, hm, title, desc) => {
+    const [h, m] = String(hm || '08:00').split(':').map(Number);
+    return [
+      'BEGIN:VEVENT',
+      'UID:descubrirte-' + mode + '-' + stamp,
+      'DTSTAMP:' + stamp,
+      'DTSTART:' + day + 'T' + pad(h || 0) + pad(m || 0) + '00',
+      'DURATION:PT10M',
+      'RRULE:FREQ=DAILY',
+      'SUMMARY:' + title,
+      'DESCRIPTION:' + desc,
+      'BEGIN:VALARM',
+      'ACTION:DISPLAY',
+      'TRIGGER:PT0S',
+      'DESCRIPTION:' + title,
+      'END:VALARM',
+      'END:VEVENT',
+    ].join('\r\n');
+  };
+  return [
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//DescubrirTe//ES', 'CALSCALE:GREGORIAN',
+    ev('morning', reminders.morning, 'DescubrirTe — tu momento de la mañana',
+      'Encontrate con vos antes de empezar el día.'),
+    ev('night', reminders.night, 'DescubrirTe — tu momento de la noche',
+      'Cerrá tu día escribiendo cómo te fue.'),
+    'END:VCALENDAR',
+  ].join('\r\n');
+}
+
+function dtDownloadIcs(reminders) {
+  try {
+    const blob = new Blob([dtIcsText(reminders)], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'descubrirte-recordatorios.ics';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    return true;
+  } catch (e) { return false; }
+}
+
 // Hook: install availability + trigger.
 function useDTInstall() {
   const [promptEvent, setPromptEvent] = React.useState(null);
@@ -127,6 +195,7 @@ function DTInstallCard({ canInstall, installed, install, isIOS }) {
 }
 
 Object.assign(window, {
-  dtIsStandalone, dtIsIOS, dtRegisterSW, dtSyncReminders, dtCheckDue,
+  dtIsStandalone, dtIsIOS, dtRegisterSW, dtSyncReminders, dtCheckDue, dtPostSW,
+  dtTestAlarm, dtSnoozeBg, dtAskAlarmStatus, dtSupportsScheduled, dtIcsText, dtDownloadIcs,
   useDTInstall, DTInstallCard,
 });

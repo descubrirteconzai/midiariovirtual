@@ -74,7 +74,7 @@ function DTCheckin({ mode, day, initial, onSave, onClose, name }) {
 
         {cur === 'mood' && (
           <div style={{ animation: 'dtIn .35s ease' }}>
-            <h2 style={dtQ()}>¿Con qué ánimo llegás a este momento?</h2>
+            <h2 style={dtQ()}>{dtMoodQuestionFor(mode, day)}</h2>
             <div style={{ marginTop: 20 }}>
               <DTMoodPicker value={mood} onChange={setMood} />
             </div>
