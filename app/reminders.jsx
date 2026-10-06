@@ -1,7 +1,7 @@
 // reminders.jsx — daily alarm scheduling + in-app alarm.
 
 function dtDefaultReminders() {
-  return { on: false, morning: '08:00', night: '22:00' };
+  return { on: false, morning: '08:00', night: '22:00', exOn: true, exNoon: '11:00', exSiesta: '15:00', exBefore: 3 };
 }
 
 function dtParseHM(s) {
@@ -90,8 +90,10 @@ function useDTReminders(reminders, onFire) {
     };
     schedule('morning', reminders.morning);
     schedule('night', reminders.night);
+    if (reminders.exOn !== false) dtExerciseSlots(reminders).forEach(s => schedule('exercise', s.hm));
     return () => { timers.current.forEach(clearTimeout); timers.current = []; };
-  }, [reminders && reminders.on, reminders && reminders.morning, reminders && reminders.night]);
+  }, [reminders && reminders.on, reminders && reminders.morning, reminders && reminders.night,
+      reminders && reminders.exOn, reminders && reminders.exNoon, reminders && reminders.exSiesta, reminders && reminders.exBefore]);
 }
 
 // ── Time picker row ────────────────────────────────────────────
@@ -131,6 +133,7 @@ function DTToggle({ on, onChange }) {
 function DTAlarm({ mode, onWrite, onSnooze, onClose, name }) {
   if (!mode) return null;
   const isM = mode === 'morning';
+  const isEx = mode === 'exercise';
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 120, background: 'rgba(60,65,96,.42)',
       backdropFilter: 'blur(3px)', display: 'grid', placeItems: 'center', padding: 28,
@@ -147,13 +150,13 @@ function DTAlarm({ mode, onWrite, onSnooze, onClose, name }) {
           )}
         </div>
         <div style={{ fontFamily: 'var(--f-script)', fontSize: 34, color: 'var(--ink)', lineHeight: 1 }}>
-          {isM ? 'Buenos días' : 'Buenas noches'}{name ? `, ${name}` : ''}
+          {isEx ? 'Tu ejercicio' : isM ? 'Buenos días' : 'Buenas noches'}{name ? `, ${name}` : ''}
         </div>
         <p style={{ fontFamily: 'var(--f-serif)', fontStyle: 'italic', fontSize: 19, color: 'var(--ink-soft)',
           margin: '12px 0 22px', lineHeight: 1.4, textWrap: 'pretty' }}>
-          {isM ? 'Es tu momento. ¿Cómo llegás hoy?' : 'Cerremos el día juntas. ¿Cómo te fue?'}
+          {isEx ? 'Todavía estás a tiempo: son 10 minutos para vos.' : isM ? 'Es tu momento. ¿Cómo llegás hoy?' : 'Cerremos el día juntas. ¿Cómo te fue?'}
         </p>
-        <DTButton onClick={onWrite} variant={isM ? 'primary' : 'ink'}>Escribir ahora</DTButton>
+        <DTButton onClick={onWrite} variant={isM || isEx ? 'primary' : 'ink'}>{isEx ? 'Hacer el ejercicio' : 'Escribir ahora'}</DTButton>
         <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
           <DTButton onClick={onSnooze} variant="ghost" style={{ fontSize: 14 }}>En 10 min</DTButton>
           <DTButton onClick={onClose} variant="ghost" style={{ fontSize: 14 }}>Cerrar</DTButton>

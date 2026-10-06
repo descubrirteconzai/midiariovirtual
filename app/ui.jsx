@@ -212,12 +212,14 @@ const DT_NAV_ICONS = {
   home: (a) => <path d="M3 11l9-8 9 8M5 9.5V21h5v-6h4v6h5V9.5" fill="none" stroke="currentColor" strokeWidth={a ? 2.2 : 1.8} strokeLinecap="round" strokeLinejoin="round" />,
   journey: (a) => <path d="M5 4v16M19 4v16M5 8h14M5 14h14" fill="none" stroke="currentColor" strokeWidth={a ? 2.2 : 1.8} strokeLinecap="round" />,
   patterns: (a) => <path d="M4 19V5M4 15l5-5 4 3 6-7" fill="none" stroke="currentColor" strokeWidth={a ? 2.2 : 1.8} strokeLinecap="round" strokeLinejoin="round" />,
+  diary: (a) => <g fill="none" stroke="currentColor" strokeWidth={a ? 2.2 : 1.8} strokeLinecap="round" strokeLinejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5" /><path d="M3.5 10h17M8 3v4M16 3v4" /><circle cx="12" cy="15" r="1.3" fill="currentColor" stroke="none" /></g>,
 };
 function DTBottomNav({ tab, onTab, unlocked }) {
   const items = [
     { id: 'home', label: 'Hoy' },
     { id: 'journey', label: 'Mi viaje' },
     { id: 'patterns', label: 'Patrones' },
+    { id: 'diary', label: 'Diario' },
   ];
   return (
     <div style={{

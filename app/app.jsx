@@ -66,6 +66,7 @@ function DTApp() {
   const [checkin, setCheckin] = aUseState(null); // {mode, day}
   const [settings, setSettings] = aUseState(false);
   const [detailDay, setDetailDay] = aUseState(null);
+  const [readDate, setReadDate] = aUseState(null); // { key, days }
   const [alarm, setAlarm] = aUseState(null);
   const [alarmStatus, setAlarmStatus] = aUseState({ triggers: false, scheduled: 0 });
   const [exportOpen, setExportOpen] = aUseState(false);
@@ -78,6 +79,14 @@ function DTApp() {
   const inst = useDTInstall();
 
   aUseEffect(() => { dtSave(state); }, [state]);
+  aUseEffect(() => {
+    const tick = () => setState(s => dtAdvanceDay(s));
+    tick();
+    const id = setInterval(tick, 60 * 1000);
+    const onVis = () => { if (document.visibilityState === 'visible') tick(); };
+    document.addEventListener('visibilitychange', onVis);
+    return () => { clearInterval(id); document.removeEventListener('visibilitychange', onVis); };
+  }, []);
 
   const name = (state.name != null && state.name !== '' ? state.name : (t.userName || '')).trim();
   const paletteKey = DT_PALETTES[state.palette] ? state.palette : t.palette;
@@ -85,17 +94,19 @@ function DTApp() {
   const setPalette = (k) => setState(s => ({ ...s, palette: k }));
   const filled = dtFilledDays(state);
   const unlocked = filled >= 3;
-  const reminders = state.reminders || dtDefaultReminders();
+  const reminders = { ...dtDefaultReminders(), ...(state.reminders || {}) };
+  const stateRef = aUseRef(state); stateRef.current = state;
 
   // ── reminders ──
   const fireAlarm = (mode) => {
+    if (mode === 'exercise' && stateRef.current.exerciseDoneOn === dtLocalKey()) return;
     dtChime();
-    const isM = mode === 'morning';
-    dtNotify(
-      isM ? 'Tu momento de la mañana' : 'Tu momento de la noche',
-      isM ? 'Encontrate con vos antes de empezar el día.' : 'Cerrá tu día escribiendo cómo te fue.',
-      mode
-    );
+    const copy = {
+      morning: ['Tu momento de la mañana', 'Encontrate con vos antes de empezar el día.'],
+      night: ['Tu momento de la noche', 'Cerrá tu día escribiendo cómo te fue.'],
+      exercise: ['Tu ejercicio del día', 'Todavía estás a tiempo: son 10 minutos para vos.'],
+    }[mode] || [];
+    dtNotify(copy[0], copy[1], mode);
     setAlarm(mode);
   };
   useDTReminders(reminders, fireAlarm);
@@ -107,11 +118,14 @@ function DTApp() {
     const ci = params.get('checkin');
     const tb = params.get('tab');
     if (ci === 'morning' || ci === 'night') setCheckin({ mode: ci, day: state.currentDay });
+    else if (params.get('exercise')) setExercise(state.currentDay);
     else if (tb === 'patterns') setTab('patterns');
     const onMsg = e => {
       const d = e.data || {};
       if (d.type === 'open-checkin' && (d.mode === 'morning' || d.mode === 'night')) {
         setCheckin({ mode: d.mode, day: state.currentDay });
+      } else if (d.type === 'open-exercise') {
+        setExercise(stateRef.current.currentDay);
       } else if (d.type === 'alarm-status') {
         setAlarmStatus({ triggers: !!d.triggers, scheduled: d.scheduled || 0 });
       }
@@ -127,11 +141,12 @@ function DTApp() {
     };
   }, []);
 
-  aUseEffect(() => { dtSyncReminders(reminders); },
-    [reminders.on, reminders.morning, reminders.night]);
+  aUseEffect(() => { dtSyncReminders({ ...reminders, exerciseDoneOn: state.exerciseDoneOn || '' }); },
+    [reminders.on, reminders.morning, reminders.night, reminders.exOn, reminders.exNoon,
+     reminders.exSiesta, reminders.exBefore, state.exerciseDoneOn]);
 
   // ── Android hardware back closes the top layer instead of leaving the app ──
-  const overlayOpen = !!(checkin || exercise || settings || detailDay != null || exportOpen || alarm);
+  const overlayOpen = !!(checkin || exercise || settings || detailDay != null || readDate || exportOpen || alarm);
   const overlayPushed = aUseRef(false);
   const poppingBack = aUseRef(false);
   aUseEffect(() => {
@@ -151,13 +166,14 @@ function DTApp() {
       if (alarm) setAlarm(null);
       else if (exportOpen) setExportOpen(false);
       else if (detailDay != null) setDetailDay(null);
+      else if (readDate) setReadDate(null);
       else if (settings) setSettings(false);
       else if (exercise) setExercise(null);
       else if (checkin) setCheckin(null);
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
-  }, [overlayOpen, alarm, exportOpen, detailDay, settings, exercise, checkin]);
+  }, [overlayOpen, alarm, exportOpen, detailDay, readDate, settings, exercise, checkin]);
 
   const setReminders = (patch) => setState(s => ({
     ...s, reminders: { ...(s.reminders || dtDefaultReminders()), ...patch },
@@ -191,7 +207,7 @@ function DTApp() {
   };
   // Empezar una semana nueva: se conservan nombre, paleta y recordatorios.
   const startWeek = () => {
-    setState(s => ({ ...s, cycleLength: 7, entries: {}, currentDay: 1, usedDemo: false,
+    setState(s => ({ ...s, cycleLength: 7, entries: {}, dayDates: {}, currentDay: 1, usedDemo: false,
       onboarded: true, startDate: new Date().toISOString() }));
     setTab('home');
     setSettings(false);
@@ -203,6 +219,8 @@ function DTApp() {
     setState(s => ({
       ...s,
       entries: { ...s.entries, [day]: { ...(s.entries[day] || {}), exercise: data } },
+      dayDates: { ...(s.dayDates || {}), [day]: (s.dayDates && s.dayDates[day]) || dtLocalKey() },
+      exerciseDoneOn: day === s.currentDay ? dtLocalKey() : s.exerciseDoneOn,
     }));
     setExercise(null);
   };
@@ -210,10 +228,8 @@ function DTApp() {
     const { mode, day } = checkin;
     setState(s => {
       const entries = { ...s.entries, [day]: { ...(s.entries[day] || {}), [mode]: data } };
-      let currentDay = s.currentDay;
-      const e = entries[day];
-      if (e.morning && e.night && day === currentDay && currentDay < s.cycleLength) currentDay = currentDay + 1;
-      return { ...s, entries, currentDay };
+      const dayDates = { ...(s.dayDates || {}), [day]: (s.dayDates && s.dayDates[day]) || dtLocalKey() };
+      return { ...s, entries, dayDates };
     });
     setCheckin(null);
   };
@@ -247,6 +263,7 @@ function DTApp() {
     if (tab === 'home') screen = <DTHome state={{ ...state, name }} decor={t.decor}
       onOpen={(m) => openCheckin(m)} onSettings={() => setSettings(true)}
       onExercise={() => openExercise()} />;
+    else if (tab === 'diary') screen = <DTDiary state={state} decor={t.decor} onOpenDate={(key, days) => setReadDate({ key, days })} />;
     else if (tab === 'journey') screen = <DTJourney state={state} decor={t.decor} onOpenDay={(d) => setDetailDay(d)} />;
     else screen = <DTPatterns state={state} onLoadDemo={loadDemo} onExport={unlocked ? openExport : null} />;
     content = (
@@ -265,103 +282,15 @@ function DTApp() {
             background: 'var(--bg)', position: 'relative', overflow: 'hidden' }}>
             {content}
 
-            {/* Settings sheet */}
-            <DTSheet open={settings} onClose={() => setSettings(false)} title="Ajustes">
-              <label style={dtSlabel()}>Tu nombre</label>
-              <input value={state.name || ''} onChange={e => setName(e.target.value)}
-                placeholder="¿Cómo querés que te llame?" style={dtInput()} />
+            <DTProfileSheet open={settings} onClose={() => setSettings(false)} state={state}
+              setName={setName} setStartDate={v => setState(s => ({ ...s, startDate: v }))}
+              reminders={reminders} setReminders={setReminders} toggleReminders={toggleReminders}
+              notifyState={notifyState} setNotifyState={setNotifyState} alarmStatus={alarmStatus}
+              paletteKey={paletteKey} setPalette={setPalette} inst={inst} onReset={resetAll} />
 
-              <label style={{ ...dtSlabel(), marginTop: 22 }}>Paleta de colores</label>
-              <div style={{ display: 'flex', gap: 10 }}>
-                {Object.keys(DT_PALETTES).map(k => {
-                  const p = DT_PALETTES[k];
-                  const on = paletteKey === k;
-                  return (
-                    <button key={k} onClick={() => setPalette(k)} className="dt-press"
-                      style={{ flex: 1, cursor: 'pointer', borderRadius: 16, padding: '12px 8px 10px',
-                        border: '1.5px solid ' + (on ? p.primary : 'var(--line)'),
-                        background: on ? p.softBg : 'transparent', textAlign: 'center' }}>
-                      <div style={{ display: 'flex', justifyContent: 'center', gap: 3, marginBottom: 8 }}>
-                        {p.swatch.map(c => (
-                          <span key={c} style={{ width: 13, height: 13, borderRadius: 99, background: c,
-                            boxShadow: 'inset 0 0 0 1px rgba(76,82,112,.12)' }} />
-                        ))}
-                      </div>
-                      <div style={{ fontFamily: 'var(--f-sans)', fontSize: 11.5,
-                        fontWeight: on ? 700 : 500, color: 'var(--ink)', lineHeight: 1.2 }}>{p.label}</div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 22 }}>
-                <div style={{ flex: 1 }}>
-                  <div style={dtSlabel()}>Recordatorio diario</div>
-                  <div style={{ fontFamily: 'var(--f-sans)', fontSize: 12.5, color: 'var(--ink-faint)', marginTop: -4 }}>
-                    Una alarma suave para no olvidarte.
-                  </div>
-                </div>
-                <DTToggle on={reminders.on} onChange={toggleReminders} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
-                <DTTimeRow label="Mañana" sub="Encontrate con vos" value={reminders.morning}
-                  disabled={!reminders.on} onChange={v => setReminders({ morning: v })} />
-                <DTTimeRow label="Noche" sub="Cerrá tu día" value={reminders.night}
-                  disabled={!reminders.on} onChange={v => setReminders({ night: v })} />
-              </div>
-              {reminders.on && notifyState === 'denied' && (
-                <p style={{ fontFamily: 'var(--f-sans)', fontSize: 12, color: 'var(--primary-deep)',
-                  margin: '10px 0 0', lineHeight: 1.45 }}>
-                  Las notificaciones del sistema están bloqueadas. Activalas en los ajustes del
-                  teléfono para que la alarma suene con la app cerrada.
-                </p>
-              )}
-
-              {reminders.on && (
-                <div style={{ marginTop: 12, padding: '13px 15px', background: 'var(--surface-2)',
-                  border: '1px solid var(--line)', borderRadius: 16 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: 99, flexShrink: 0,
-                      background: alarmStatus.scheduled > 0 ? 'var(--primary)' : 'var(--ink-faint)' }} />
-                    <div style={{ fontFamily: 'var(--f-sans)', fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>
-                      {alarmStatus.scheduled > 0
-                        ? 'Alarmas programadas en el teléfono'
-                        : 'Alarma con la app cerrada'}
-                    </div>
-                  </div>
-                  <p style={{ fontFamily: 'var(--f-sans)', fontSize: 12, color: 'var(--ink-faint)',
-                    margin: '6px 0 0', lineHeight: 1.5 }}>
-                    {alarmStatus.scheduled > 0
-                      ? `Las próximas ${alarmStatus.scheduled} alarmas ya están agendadas: suenan solas, sin abrir la app.`
-                      : 'Sonará en la barra de notificaciones. Si tu teléfono duerme la app, agregala también a tu calendario y la alarma nunca falla.'}
-                  </p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
-                    <DTButton variant="soft" style={{ fontSize: 14 }}
-                      onClick={async () => {
-                        const res = await dtAskNotify(); setNotifyState(res);
-                        if (res === 'granted') { dtTestAlarm('morning'); dtChime(); dtAskAlarmStatus(); }
-                      }}>Probar la alarma ahora</DTButton>
-                    <DTButton variant="ghost" style={{ fontSize: 14 }}
-                      onClick={() => dtDownloadIcs(reminders)}>
-                      Agregar a la alarma del teléfono
-                    </DTButton>
-                  </div>
-                </div>
-              )}
-
-              <div style={{ marginTop: 14 }}>
-                <DTInstallCard canInstall={inst.canInstall} installed={inst.installed}
-                  install={inst.install} isIOS={inst.isIOS} />
-              </div>
-
-              <div style={{ marginTop: 22, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <DTButton variant="soft" onClick={startWeek}>Iniciar semana</DTButton>
-                <DTButton variant="ghost" onClick={resetAll}>Reiniciar mi viaje</DTButton>
-              </div>
-              <p style={{ fontFamily: 'var(--f-sans)', fontSize: 12, color: 'var(--ink-faint)',
-                textAlign: 'center', margin: '16px 0 0' }}>
-                Todo se guarda solo en este dispositivo.
-              </p>
+            <DTSheet open={!!readDate} onClose={() => setReadDate(null)}
+              title={readDate ? new Date(readDate.key + 'T12:00:00').toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' }).replace(/^./, c => c.toUpperCase()) : ''}>
+              {readDate && <DTDiaryRead state={state} days={readDate.days} />}
             </DTSheet>
 
             {/* Day detail sheet */}
@@ -399,7 +328,7 @@ function DTApp() {
 
             {/* Alarm overlay */}
             <DTAlarm mode={alarm} name={name}
-              onWrite={() => { const m = alarm; setAlarm(null); openCheckin(m); }}
+              onWrite={() => { const m = alarm; setAlarm(null); if (m === 'exercise') openExercise(); else openCheckin(m); }}
               onSnooze={snooze}
               onClose={() => setAlarm(null)} />
           </div>

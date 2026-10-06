@@ -202,7 +202,7 @@ DT_QUESTIONS.night.forEach(q => { DT_Q_BY_ID[q.id] = q; });
 
 const DT_BRAND = {
   name: 'DescubrirTe',
-  tagline: 'DescubrirTe es el acto de amor más valiente que existe',
+  tagline: 'DescubrirTe es volver a vos',
 };
 
 // Build a CSS-variable style object for a given palette + text scale.

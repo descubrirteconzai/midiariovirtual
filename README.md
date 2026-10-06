@@ -2,7 +2,7 @@
 
 Diario guiado de mañana y noche que detecta automáticamente los patrones que se repiten en lo que sentís.
 
-> DescubrirTe es el acto de amor más valiente que existe.
+> DescubrirTe es volver a vos.
 
 ## Qué hace
 

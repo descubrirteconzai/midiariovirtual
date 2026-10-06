@@ -138,6 +138,7 @@ function dtSeedDemo(state) {
   DT_DEMO_DAYS.forEach((d, i) => { next.entries[i + 1] = d; });
   next.cycleLength = 7;
   next.currentDay = 7;
+  next.dayDates = {};
   next.onboarded = true;
   next.usedDemo = true;
   // backdate start so the calendar reads naturally

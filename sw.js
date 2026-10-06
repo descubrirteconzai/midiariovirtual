@@ -1,14 +1,14 @@
 /* sw.js — DescubrirTe service worker: offline shell + daily reminders. */
-const CACHE = 'descubrirte-v4';
+const CACHE = 'descubrirte-v6';
 const CFG = '__dt_reminders__';
 
 const LOCAL = [
   './', './index.html', './DescubrirTe.html', './manifest.webmanifest',
   './tweaks-panel.jsx', './frames/ios-frame.jsx', './frames/android-frame.jsx',
   './app/brand.jsx', './app/analysis.jsx', './app/storage.jsx', './app/ui.jsx',
-  './app/pwa.jsx', './app/reminders.jsx', './app/export.jsx', './app/checkin.jsx',
+  './app/pwa.jsx', './app/reminders.jsx', './app/profile.jsx', './app/export.jsx', './app/checkin.jsx',
   './app/program.jsx', './app/exercise.jsx',
-  './app/patterns.jsx', './app/screens.jsx', './app/app.jsx',
+  './app/patterns.jsx', './app/screens.jsx', './app/diary.jsx', './app/app.jsx',
   './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png',
   './icons/apple-touch-icon.png', './icons/badge-96.png',
 ];
@@ -99,7 +99,26 @@ function hmToday(hm, base) {
 const COPY = {
   morning: { title: 'Tu momento de la mañana', body: 'Encontrate con vos antes de empezar el día.' },
   night: { title: 'Tu momento de la noche', body: 'Cerrá tu día escribiendo cómo te fue.' },
+  exercise: { title: 'Tu ejercicio del día', body: 'Todavía estás a tiempo: son 10 minutos para vos.' },
 };
+
+function localKey(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function minusHours(hm, h) {
+  const [H, M] = String(hm || '22:00').split(':').map(Number);
+  let t = ((H || 0) - (h || 0)) % 24; if (t < 0) t += 24;
+  return String(t).padStart(2, '0') + ':' + String(M || 0).padStart(2, '0');
+}
+// Tres avisos del ejercicio; solo suenan si todavía no se hizo ese día.
+function exSlots(cfg) {
+  if (!cfg || cfg.exOn === false) return [];
+  return [
+    { key: 'ex1', hm: cfg.exNoon || '11:00' },
+    { key: 'ex2', hm: cfg.exSiesta || '15:00' },
+    { key: 'ex3', hm: minusHours(cfg.night, cfg.exBefore || 3) },
+  ];
+}
 
 // Opciones de alarma: suena y vibra como una alerta del sistema.
 function alarmOpts(mode, extra) {
@@ -114,7 +133,7 @@ function alarmOpts(mode, extra) {
     silent: false,
     vibrate: [0, 350, 180, 350, 180, 600],
     data: { mode },
-    actions: [{ action: 'write', title: 'Escribir ahora' },
+    actions: [{ action: 'write', title: mode === 'exercise' ? 'Hacer el ejercicio' : 'Escribir ahora' },
               { action: 'snooze', title: 'En 10 min' }],
   }, extra || {});
 }
@@ -154,6 +173,20 @@ async function scheduleAhead(cfg, days) {
         n++;
       } catch (e) {}
     }
+    const base = new Date(); base.setDate(base.getDate() + d);
+    if (d === 0 && cfg.exerciseDoneOn === localKey(base)) continue;
+    for (const s of exSlots(cfg)) {
+      const when = hmToday(s.hm, base).getTime();
+      if (when <= now + 15000) continue;
+      try {
+        await self.registration.showNotification(COPY.exercise.title, alarmOpts('exercise', {
+          tag: 'dt-sched-' + s.key + '-' + d,
+          showTrigger: new TimestampTrigger(when),
+          data: { mode: 'exercise', scheduled: true },
+        }));
+        n++;
+      } catch (e) {}
+    }
   }
   return n;
 }
@@ -172,6 +205,16 @@ async function checkDue() {
       await self.registration.showNotification(COPY[mode].title, alarmOpts(mode));
       fired[mode] = key;
       changed = true;
+    }
+  }
+  if (cfg.exerciseDoneOn !== localKey(now)) {
+    for (const s of exSlots(cfg)) {
+      const when = hmToday(s.hm, now);
+      if (now >= when && (now - when) < 2 * 3600 * 1000 && fired[s.key] !== key) {
+        await self.registration.showNotification(COPY.exercise.title, alarmOpts('exercise', { tag: 'dt-' + s.key }));
+        fired[s.key] = key;
+        changed = true;
+      }
     }
   }
   if (changed) await writeCfg({ ...cfg, fired });
@@ -273,12 +316,12 @@ self.addEventListener('notificationclick', e => {
     })());
     return;
   }
-  const url = './DescubrirTe.html?checkin=' + mode;
+  const url = mode === 'exercise' ? './DescubrirTe.html?exercise=1' : './DescubrirTe.html?checkin=' + mode;
   e.waitUntil((async () => {
     const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     for (const cl of all) {
       if (cl.url.includes('DescubrirTe.html')) {
-        cl.postMessage({ type: 'open-checkin', mode });
+        cl.postMessage(mode === 'exercise' ? { type: 'open-exercise' } : { type: 'open-checkin', mode });
         return cl.focus();
       }
     }

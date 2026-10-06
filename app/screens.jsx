@@ -185,6 +185,11 @@ function DTHome({ state, onOpen, onSettings, onExercise, decor }) {
           )}
           <CheckRow mode="night" done={st.night} />
         </div>
+        {st.morning && st.night && day < state.cycleLength && (
+          <p style={{ fontFamily: 'var(--f-sans)', fontSize: 14, color: 'var(--ink-soft)', textAlign: 'center', margin: '16px 0 0' }}>
+            Terminaste tu día. El día {day + 1} se abre mañana.
+          </p>
+        )}
 
         {/* Daily intention quote */}
         <div style={{ marginTop: 22, padding: '4px 8px', textAlign: 'center' }}>
@@ -211,26 +216,30 @@ function DTJourney({ state, onOpenDay, decor }) {
           {state.cycleLength} días contigo
         </h1>
         <p style={{ fontFamily: 'var(--f-sans)', fontSize: 14, color: 'var(--ink-soft)', margin: '0 0 22px' }}>
-          Tocá cualquier día para escribir o releerte.
+          Cada día nuevo se abre a la mañana siguiente.
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
           {days.map(d => {
             const s = dtDayStatus(state, d);
             const isToday = d === state.currentDay;
+            const locked = d > state.currentDay;
             return (
-              <button key={d} onClick={() => onOpenDay(d)} className="dt-press"
-                style={{ aspectRatio: '1', border: isToday ? '1.5px solid var(--primary)' : '1px solid var(--line)',
-                  background: s.both ? 'var(--primary)' : 'var(--surface)', borderRadius: 20, cursor: 'pointer',
+              <button key={d} onClick={() => !locked && onOpenDay(d)} disabled={locked} className={locked ? '' : 'dt-press'}
+                style={{ aspectRatio: '1', opacity: locked ? 0.55 : 1, cursor: locked ? 'default' : 'pointer',
+                  border: isToday ? '1.5px solid var(--primary)' : '1px solid var(--line)',
+                  background: s.both ? 'var(--primary)' : locked ? 'transparent' : 'var(--surface)', borderRadius: 20,
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
                   position: 'relative' }}>
                 <span style={{ fontFamily: 'var(--f-serif)', fontSize: 24, fontWeight: 700,
                   color: s.both ? '#fff' : 'var(--ink)' }}>{d}</span>
-                <div style={{ display: 'flex', gap: 5 }}>
+                {locked ? (
+                  <svg width="16" height="16" viewBox="0 0 24 24"><rect x="5.5" y="10.5" width="13" height="9.5" rx="2.5" fill="none" stroke="var(--ink-faint)" strokeWidth="1.8" /><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" fill="none" stroke="var(--ink-faint)" strokeWidth="1.8" strokeLinecap="round" /></svg>
+                ) : <div style={{ display: 'flex', gap: 5 }}>
                   <span style={{ width: 7, height: 7, borderRadius: 9,
                     background: s.morning ? (s.both ? 'rgba(255,255,255,.9)' : 'var(--primary)') : 'var(--line)' }} />
                   <span style={{ width: 7, height: 7, borderRadius: 9,
                     background: s.night ? (s.both ? 'rgba(255,255,255,.9)' : 'var(--ink)') : 'var(--line)' }} />
-                </div>
+                </div>}
               </button>
             );
           })}
@@ -247,24 +256,24 @@ function DTJourney({ state, onOpenDay, decor }) {
 }
 
 // ── Day detail sheet content ───────────────────────────────────
-function DTDayDetail({ state, day, onCheckin, onExercise }) {
+function DTDayDetail({ state, day, onCheckin, onExercise, readOnly }) {
   const e = state.entries[day] || {};
   const prog = dtProgramDay(day);
   const sections = [
     { key: 'morning', label: 'Mañana', data: e.morning },
     { key: 'night', label: 'Noche', data: e.night },
-  ];
+  ].filter(sec => !readOnly || sec.data);
   return (
     <div>
       {sections.map(sec => (
         <div key={sec.key} style={{ marginBottom: 18 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
             <DTEyebrow>{sec.label}</DTEyebrow>
-            <button onClick={() => onCheckin(sec.key)} className="dt-tap" style={{ border: 'none', background: 'var(--soft-bg)',
+            {!readOnly && <button onClick={() => onCheckin(sec.key)} className="dt-tap" style={{ border: 'none', background: 'var(--soft-bg)',
               borderRadius: 99, padding: '6px 14px', cursor: 'pointer', fontFamily: 'var(--f-sans)', fontSize: 12.5,
               fontWeight: 600, color: 'var(--ink)' }}>
               {sec.data ? 'Editar' : 'Escribir'}
-            </button>
+            </button>}
           </div>
           {sec.data ? (
             <div style={{ background: 'var(--surface-2)', borderRadius: 16, padding: 14, border: '1px solid var(--line)' }}>
@@ -276,6 +285,20 @@ function DTDayDetail({ state, day, onCheckin, onExercise }) {
                   {sec.data.sleep ? ` · sueño ${sec.data.sleep}/5` : ''}
                 </span>
               </div>
+              {(sec.data.grateful || []).some(g => g && g.trim()) && (
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontFamily: 'var(--f-sans)', fontSize: 12, color: 'var(--ink-faint)', marginBottom: 2 }}>Hoy agradezco…</div>
+                  {sec.data.grateful.filter(g => g && g.trim()).map((g, i) => (
+                    <div key={i} style={{ fontFamily: 'var(--f-serif)', fontSize: 16, color: 'var(--ink)', lineHeight: 1.4 }}>{i + 1}. {g}</div>
+                  ))}
+                </div>
+              )}
+              {sec.data.sustain && sec.data.sustain.trim() && (
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontFamily: 'var(--f-sans)', fontSize: 12, color: 'var(--ink-faint)', marginBottom: 2 }}>Lo bueno que quiero sostener hoy</div>
+                  <div style={{ fontFamily: 'var(--f-serif)', fontSize: 16, color: 'var(--ink)', lineHeight: 1.4 }}>{sec.data.sustain}</div>
+                </div>
+              )}
               {Object.keys(sec.data.answers || {}).map(qid => {
                 const val = sec.data.answers[qid];
                 if (!val || !String(val).trim()) return null;
@@ -295,15 +318,15 @@ function DTDayDetail({ state, day, onCheckin, onExercise }) {
           )}
         </div>
       ))}
-      {prog && onExercise && (
+      {prog && (readOnly ? e.exercise : onExercise) && (
         <div style={{ marginBottom: 18 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
             <DTEyebrow>Ejercicio · {prog.title}</DTEyebrow>
-            <button onClick={onExercise} className="dt-tap" style={{ border: 'none', background: 'var(--soft-bg)',
+            {!readOnly && <button onClick={onExercise} className="dt-tap" style={{ border: 'none', background: 'var(--soft-bg)',
               borderRadius: 99, padding: '6px 14px', cursor: 'pointer', fontFamily: 'var(--f-sans)',
               fontSize: 12.5, fontWeight: 600, color: 'var(--ink)', flexShrink: 0 }}>
               {e.exercise ? 'Editar' : 'Hacerlo'}
-            </button>
+            </button>}
           </div>
           {e.exercise
             ? <DTExerciseRecap day={day} data={e.exercise} />

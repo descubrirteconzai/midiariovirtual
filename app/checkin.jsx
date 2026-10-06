@@ -7,13 +7,15 @@ function DTCheckin({ mode, day, initial, onSave, onClose, name }) {
   const questions = dtQuestionsFor(mode, day);
   // steps: [mood] (+[scales for morning]) + one per question
   const preSteps = isMorning ? ['mood', 'scales'] : ['mood'];
-  const steps = [...preSteps, ...questions.map(q => q.id)];
+  const steps = [...preSteps, ...questions.map(q => q.id), ...(isMorning ? ['grateful'] : [])];
 
   const [step, setStep] = dtUseState(0);
   const [mood, setMood] = dtUseState(initial?.mood ?? null);
   const [energy, setEnergy] = dtUseState(initial?.energy ?? null);
   const [sleep, setSleep] = dtUseState(initial?.sleep ?? null);
   const [answers, setAnswers] = dtUseState(initial?.answers ?? {});
+  const [grateful, setGrateful] = dtUseState(initial?.grateful ?? ['', '', '']);
+  const [sustain, setSustain] = dtUseState(initial?.sustain ?? '');
 
   const cur = steps[step];
   const total = steps.length;
@@ -26,7 +28,7 @@ function DTCheckin({ mode, day, initial, onSave, onClose, name }) {
   };
 
   const finish = () => {
-    const data = isMorning ? { mood, energy, sleep, answers } : { mood, answers };
+    const data = isMorning ? { mood, energy, sleep, answers, grateful, sustain } : { mood, answers };
     onSave(data);
   };
   const next = () => { if (last) finish(); else setStep(s => s + 1); };
@@ -118,6 +120,36 @@ function DTCheckin({ mode, day, initial, onSave, onClose, name }) {
             />
           </div>
         ))}
+        {cur === 'grateful' && (
+          <div style={{ animation: 'dtIn .35s ease', display: 'flex', flexDirection: 'column', flex: 1 }}>
+            <div style={{ fontFamily: 'var(--f-script)', fontSize: 22, color: 'var(--primary)', marginBottom: 4 }}>
+              lo bueno también se escribe
+            </div>
+            <h2 style={dtQ()}>Hoy agradezco…</h2>
+            <p style={{ fontFamily: 'var(--f-sans)', fontSize: 13.5, fontStyle: 'italic',
+              color: 'var(--ink-soft)', margin: '8px 0 0' }}>Tres cosas, grandes o chiquitas.</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 18 }}>
+              {['Un momento, una persona…', 'Algo de mi cuerpo, de mi casa…', 'Algo de mí'].map((ph, i) => (
+                <label key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, background: 'var(--surface)',
+                  border: '1px solid var(--line)', borderRadius: 16, padding: '0 16px', minHeight: 48 }}>
+                  <span style={{ fontFamily: 'var(--f-serif)', fontStyle: 'italic', fontSize: 15,
+                    color: 'var(--primary)', width: 10 }}>{i + 1}</span>
+                  <input value={grateful[i] || ''} placeholder={ph}
+                    onChange={e => { const v = e.target.value; setGrateful(g => g.map((x, j) => j === i ? v : x)); }}
+                    style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent',
+                      fontFamily: 'var(--f-sans)', fontSize: 16, color: 'var(--ink)', padding: '12px 0' }} />
+                </label>
+              ))}
+            </div>
+            <label style={{ ...dtLbl(), marginTop: 22, marginBottom: 10 }}>Lo bueno que quiero sostener hoy</label>
+            <textarea value={sustain} onChange={e => setSustain(e.target.value)}
+              placeholder="Una actitud, un pensamiento, algo que ya está funcionando…"
+              style={{ flex: 1, minHeight: 150, width: '100%', boxSizing: 'border-box',
+                border: '1px solid var(--line)', borderRadius: 18, padding: 16, resize: 'none',
+                fontFamily: 'var(--f-sans)', fontSize: 16, lineHeight: 1.6, color: 'var(--ink)',
+                background: 'var(--surface)', outline: 'none' }} />
+          </div>
+        )}
       </div>
 
       {/* Footer */}
