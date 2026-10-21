@@ -89,7 +89,7 @@ function DTApp() {
   }, []);
 
   const name = (state.name != null && state.name !== '' ? state.name : (t.userName || '')).trim();
-  const paletteKey = DT_PALETTES[state.palette] ? state.palette : t.palette;
+  const paletteKey = DT_PALETTES[state.palette] ? state.palette : (DT_PALETTES[t.palette] ? t.palette : 'blanco');
   const setName = (v) => setState(s => ({ ...s, name: v }));
   const setPalette = (k) => setState(s => ({ ...s, palette: k }));
   const filled = dtFilledDays(state);
