@@ -2,7 +2,7 @@
 const { useState, useRef, useEffect } = React;
 
 // ── Soft drawn mood face (no emoji) ────────────────────────────
-function DTFace({ v = 3, size = 40, color = '#E28F8F', active = true }) {
+function DTFace({ v = 3, size = 40, color = '#8A6346', active = true }) {
   // mouth curvature: v1 frown … v5 smile
   const curve = { 1: -8, 2: -4, 3: 0, 4: 5, 5: 9 }[v] ?? 0;
   const cx = size / 2;

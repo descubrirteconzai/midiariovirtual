@@ -28,7 +28,7 @@ function DTPatterns({ state, onLoadDemo, onExport }) {
     );
   }
 
-  const moodTones = ['#7E84A6', '#A98FAE', '#C9A6B0', '#E0A6A6', '#E28F8F'];
+  const moodTones = ['#8C7E74', '#A8917F', '#C2A58C', '#B78A66', '#8A6346'];
   const maxTheme = a.themes.length ? a.themes[0].count : 1;
   const complete = a.filledDays >= state.cycleLength;
 

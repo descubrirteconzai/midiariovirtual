@@ -59,7 +59,7 @@ const DT_POSTER = { W: 1080, M: 84, ROW: 68, MOOD_H: 300, STAT_H: 150, GAP: 28 }
 
 // Build the poster at a height measured from its own content.
 function dtBuildSummary(state, paletteKey, name) {
-  const p = DT_PALETTES[paletteKey] || DT_PALETTES.rosa;
+  const p = DT_PALETTES[paletteKey] || DT_PALETTES.blanco;
   const a = dtAnalyze(state.entries, state.cycleLength);
   const { W, M, ROW, MOOD_H, STAT_H, GAP } = DT_POSTER;
   const cardW = W - M * 2, innerW = cardW - 80;

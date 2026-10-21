@@ -12,7 +12,7 @@ function dtDefaultState() {
     currentDay: 1,
     onboarded: false,
     usedDemo: false,
-    palette: 'rosa',
+    palette: 'blanco',
     reminders: { on: false, morning: '08:00', night: '22:00' },
   };
 }

@@ -1,61 +1,34 @@
 // brand.jsx — DescubrirTe 21 design tokens, palettes, fonts, copy.
 // Exposes globals (window.*) consumed by the rest of the app.
 
-// ── Color palettes (all drawn from the brand kit) ──────────────
+// ── Color palettes (brand book oct 2026: una sola familia de marrones) ──────────────
 const DT_PALETTES = {
-  rosa: {
-    label: 'Rosa cálido',
-    bg: '#FBEAE3',
-    bgDeep: '#F6DAD0',
-    surface: '#FFFFFF',
-    surface2: '#FFF8F5',
-    ink: '#4C5270',
-    inkSoft: '#8E92A6',
-    inkFaint: '#B9BCCB',
-    primary: '#E28F8F',
-    primaryDeep: '#D17070',
-    primaryInk: '#FFFFFF',
-    soft: '#E4B0BD',
-    softBg: '#F8E6EA',
-    line: 'rgba(76,82,112,0.10)',
-    hint: '#9A4F4F',
-    swatch: ['#4C5270', '#E28F8F', '#E4B0BD', '#FFEEE6'],
+  blanco: {
+    label: 'Blanco cálido',
+    bg: '#FDFBF8', bgDeep: '#F2E8DC', surface: '#FFFFFF', surface2: '#FAF5EF',
+    ink: '#3F332B', inkSoft: '#75655A', inkFaint: '#B3A497',
+    primary: '#3F332B', primaryDeep: '#2E251F', primaryInk: '#FDFBF8',
+    soft: '#8A6346', softBg: '#F2E8DC',
+    line: 'rgba(63,51,43,0.10)', hint: '#8A6346',
+    swatch: ['#3F332B', '#8A6346', '#F2E8DC', '#FDFBF8'],
   },
-  niebla: {
-    label: 'Niebla serena',
-    bg: '#FBF1F3',
-    bgDeep: '#F4E2E7',
-    surface: '#FFFFFF',
-    surface2: '#FFF9FB',
-    ink: '#4C5270',
-    inkSoft: '#8E92A6',
-    inkFaint: '#BFBECc',
-    primary: '#D79AAA',
-    primaryDeep: '#C07F92',
-    primaryInk: '#FFFFFF',
-    soft: '#E4B0BD',
-    softBg: '#F6E6EC',
-    line: 'rgba(76,82,112,0.10)',
-    hint: '#8E5566',
-    swatch: ['#4C5270', '#D79AAA', '#E4B0BD', '#FBF1F3'],
+  caramelo: {
+    label: 'Caramelo',
+    bg: '#FDFBF8', bgDeep: '#F2E8DC', surface: '#FFFFFF', surface2: '#FAF5EF',
+    ink: '#3F332B', inkSoft: '#75655A', inkFaint: '#B3A497',
+    primary: '#8A6346', primaryDeep: '#6E4E37', primaryInk: '#FDFBF8',
+    soft: '#D4AF92', softBg: '#F2E8DC',
+    line: 'rgba(63,51,43,0.10)', hint: '#6E4E37',
+    swatch: ['#8A6346', '#D4AF92', '#3F332B', '#FDFBF8'],
   },
-  pizarra: {
-    label: 'Pizarra & rosa',
-    bg: '#EEEFF3',
-    bgDeep: '#E2E4ED',
-    surface: '#FFFFFF',
-    surface2: '#F8F8FB',
-    ink: '#3C4160',
-    inkSoft: '#7E83A0',
-    inkFaint: '#AEB2C6',
-    primary: '#4C5270',
-    primaryDeep: '#3A4060',
-    primaryInk: '#FFFFFF',
-    soft: '#E28F8F',
-    softBg: '#F6E5E5',
-    line: 'rgba(76,82,112,0.12)',
-    hint: '#3A4060',
-    swatch: ['#4C5270', '#E28F8F', '#E4B0BD', '#EEEFF3'],
+  beige: {
+    label: 'Beige & arena',
+    bg: '#F2E8DC', bgDeep: '#E8DACA', surface: '#FDFBF8', surface2: '#F8F1E9',
+    ink: '#3F332B', inkSoft: '#6F5F54', inkFaint: '#AE9D8F',
+    primary: '#3F332B', primaryDeep: '#2E251F', primaryInk: '#FDFBF8',
+    soft: '#D4AF92', softBg: '#EADBC9',
+    line: 'rgba(63,51,43,0.12)', hint: '#8A6346',
+    swatch: ['#3F332B', '#D4AF92', '#F2E8DC', '#8A6346'],
   },
 };
 
@@ -74,11 +47,11 @@ const DT_FONTS = {
 
 // ── Mood scale (1 low → 5 high). Soft drawn faces, never emoji. ─
 const DT_MOODS = [
-  { v: 1, label: 'Abrumada', color: '#7E84A6' },
-  { v: 2, label: 'Sensible', color: '#A98FAE' },
-  { v: 3, label: 'En pausa', color: '#C9A6B0' },
-  { v: 4, label: 'Serena', color: '#E0A6A6' },
-  { v: 5, label: 'Radiante', color: '#E28F8F' },
+  { v: 1, label: 'Abrumada', color: '#8C7E74' },
+  { v: 2, label: 'Sensible', color: '#A8917F' },
+  { v: 3, label: 'En pausa', color: '#C2A58C' },
+  { v: 4, label: 'Serena', color: '#B78A66' },
+  { v: 5, label: 'Radiante', color: '#8A6346' },
 ];
 
 // ── Morning question pool. Three are drawn per day, so las preguntas
@@ -207,7 +180,7 @@ const DT_BRAND = {
 
 // Build a CSS-variable style object for a given palette + text scale.
 function dtThemeVars(palette, textScale = 1) {
-  const p = DT_PALETTES[palette] || DT_PALETTES.rosa;
+  const p = DT_PALETTES[palette] || DT_PALETTES.blanco;
   return {
     '--bg': p.bg,
     '--bg-deep': p.bgDeep,

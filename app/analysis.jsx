@@ -26,21 +26,21 @@ function dtNorm(s) {
 
 // ── Theme / trigger lexicon (recurring life domains) ───────────
 const DT_THEMES = [
-  { id: 'trabajo', label: 'Trabajo', color: '#4C5270',
+  { id: 'trabajo', label: 'Trabajo', color: '#3F332B',
     words: ['trabajo', 'jefe', 'jefa', 'oficina', 'tareas', 'tarea', 'proyecto', 'reunion', 'reuniones', 'cliente', 'clientes', 'curro', 'laboral', 'empleo', 'estudio', 'estudios', 'examen'] },
-  { id: 'familia', label: 'Familia', color: '#E28F8F',
+  { id: 'familia', label: 'Familia', color: '#8A6346',
     words: ['familia', 'mama', 'papa', 'madre', 'padre', 'hijo', 'hija', 'hijos', 'hermana', 'hermano', 'pareja', 'esposo', 'esposa', 'novio', 'novia', 'casa', 'hogar'] },
-  { id: 'dinero', label: 'Dinero', color: '#C9A06A',
+  { id: 'dinero', label: 'Dinero', color: '#B08A5C',
     words: ['dinero', 'plata', 'deuda', 'deudas', 'cuenta', 'cuentas', 'pagar', 'pago', 'gastos', 'economia', 'sueldo'] },
-  { id: 'cuerpo', label: 'Cuerpo y salud', color: '#7FA9A0',
+  { id: 'cuerpo', label: 'Cuerpo y salud', color: '#8C8A6A',
     words: ['cuerpo', 'salud', 'peso', 'comida', 'comer', 'ejercicio', 'dolor', 'enferma', 'enfermo', 'energia', 'cansada', 'cansado', 'cansancio', 'agotada', 'agotado'] },
-  { id: 'descanso', label: 'Descanso', color: '#9D8FBF',
+  { id: 'descanso', label: 'Descanso', color: '#9A8578',
     words: ['dormir', 'sueño', 'sueno', 'descanso', 'descansar', 'insomnio', 'cama', 'siesta'] },
-  { id: 'emociones', label: 'Emociones', color: '#E4B0BD',
+  { id: 'emociones', label: 'Emociones', color: '#C2A58C',
     words: ['miedo', 'ansiedad', 'ansiosa', 'tristeza', 'triste', 'enojo', 'enojada', 'culpa', 'verguenza', 'soledad', 'sola', 'estres', 'estresada', 'angustia', 'preocupada', 'preocupacion'] },
-  { id: 'autoestima', label: 'Autoestima', color: '#D79AAA',
+  { id: 'autoestima', label: 'Autoestima', color: '#A2735A',
     words: ['valgo', 'merezco', 'confianza', 'segura', 'inseguridad', 'inseguro', 'autoestima', 'amor', 'amarme', 'cuidarme', 'orgullo', 'orgullosa', 'fuerte', 'capaz', 'logro', 'logre'] },
-  { id: 'tiempo', label: 'Tiempo para mí', color: '#8E92A6',
+  { id: 'tiempo', label: 'Tiempo para mí', color: '#75655A',
     words: ['tiempo', 'pausa', 'respirar', 'calma', 'silencio', 'paz', 'momento', 'caminar', 'leer', 'meditar'] },
 ];
 
