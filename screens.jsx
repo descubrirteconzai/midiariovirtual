@@ -213,7 +213,7 @@ function DTJourney({ state, onOpenDay, decor }) {
       <div style={{ position: 'relative', zIndex: 1, padding: 'calc(var(--sbar, 54px) + 16px) 22px 30px' }}>
         <DTEyebrow>Mi viaje</DTEyebrow>
         <h1 style={{ fontFamily: 'var(--f-script)', fontSize: 46, color: 'var(--ink)', margin: '6px 0 4px', lineHeight: 1 }}>
-          {state.cycleLength} días contigo
+          {state.cycleLength} días con vos
         </h1>
         <p style={{ fontFamily: 'var(--f-sans)', fontSize: 14, color: 'var(--ink-soft)', margin: '0 0 22px' }}>
           Cada día nuevo se abre a la mañana siguiente.

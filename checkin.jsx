@@ -39,7 +39,7 @@ function DTCheckin({ mode, day, initial, onSave, onClose, name }) {
   const greeting = h < 13 ? 'Buenos días' : h < 20 ? 'Buenas tardes' : 'Buenas noches';
   const sub = isMorning
     ? 'Un momento para encontrarte antes de empezar.'
-    : 'Un momento para cerrar el día contigo.';
+    : 'Un momento para cerrar el día con vos.';
 
   return (
     <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column',

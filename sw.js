@@ -1,5 +1,5 @@
 /* sw.js — DescubrirTe service worker: offline shell + daily reminders. */
-const CACHE = 'descubrirte-v6';
+const CACHE = 'descubrirte-v8';
 const CFG = '__dt_reminders__';
 
 const LOCAL = [
