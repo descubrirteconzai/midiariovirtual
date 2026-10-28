@@ -69,7 +69,7 @@ function DTPfTimeCard({ label, sub, value, onChange, disabled }) {
 }
 
 function DTProfileSheet({ open, onClose, state, setName, setStartDate, reminders, setReminders, toggleReminders,
-  notifyState, setNotifyState, alarmStatus, paletteKey, setPalette, inst, onReset }) {
+  notifyState, setNotifyState, alarmStatus, paletteKey, setPalette, inst, onReset, archive = [], onOpenPast }) {
   if (!open) return null;
   const off = !reminders.on;
   const tz = dtTimeZoneInfo();
@@ -239,8 +239,10 @@ function DTProfileSheet({ open, onClose, state, setName, setStartDate, reminders
 
       <div style={dtPfSection}>
         <DTProfileHead icon="reset">Mi viaje</DTProfileHead>
+        {archive.length > 0 && <div style={{ fontFamily: 'var(--f-sans)', fontSize: 14, color: 'var(--ink-soft)', margin: '0 0 10px' }}>Semanas anteriores · solo lectura</div>}
+        <DTPastList archive={archive} onOpen={onOpenPast} />
         <DTButton variant="ghost" onClick={() => {
-          if (window.confirm('¿Reiniciar tu viaje? Se borra todo lo que escribiste en este dispositivo.')) onReset();
+          if (window.confirm('¿Empezar un viaje nuevo? Lo que ya escribiste queda guardado en "Semanas anteriores" para leerlo y descargarlo cuando quieras.')) onReset();
         }}>Reiniciar mi viaje</DTButton>
       </div>
 

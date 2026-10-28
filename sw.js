@@ -1,5 +1,5 @@
 /* sw.js — DescubrirTe service worker: offline shell + daily reminders. */
-const CACHE = 'descubrirte-v8';
+const CACHE = 'descubrirte-v12';
 const CFG = '__dt_reminders__';
 
 const LOCAL = [
@@ -8,9 +8,10 @@ const LOCAL = [
   './app/brand.jsx', './app/analysis.jsx', './app/storage.jsx', './app/ui.jsx',
   './app/pwa.jsx', './app/reminders.jsx', './app/profile.jsx', './app/export.jsx', './app/checkin.jsx',
   './app/program.jsx', './app/exercise.jsx',
-  './app/patterns.jsx', './app/screens.jsx', './app/diary.jsx', './app/app.jsx',
+  './app/patterns.jsx', './app/screens.jsx', './app/diary.jsx', './app/history.jsx', './app/app.jsx',
   './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png',
   './icons/apple-touch-icon.png', './icons/badge-96.png',
+  './favicon.ico', './icons/favicon-32.png', './icons/favicon-96.png',
 ];
 const REMOTE = [
   'https://unpkg.com/react@18.3.1/umd/react.development.js',

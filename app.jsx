@@ -74,6 +74,9 @@ function DTApp() {
   const [notifyState, setNotifyState] = aUseState(
     typeof Notification !== 'undefined' ? Notification.permission : 'unsupported');
   const [exercise, setExercise] = aUseState(null);
+  const [archive, setArchive] = aUseState(dtLoadArchive);
+  const [pastId, setPastId] = aUseState(null);
+  const past = pastId ? archive.find(p => p.id === pastId) : null;
   const canvasRef = aUseRef(null);
   const standalone = dtIsStandalone();
   const inst = useDTInstall();
@@ -146,7 +149,7 @@ function DTApp() {
      reminders.exSiesta, reminders.exBefore, state.exerciseDoneOn]);
 
   // ── Android hardware back closes the top layer instead of leaving the app ──
-  const overlayOpen = !!(checkin || exercise || settings || detailDay != null || readDate || exportOpen || alarm);
+  const overlayOpen = !!(checkin || exercise || settings || detailDay != null || readDate || pastId || exportOpen || alarm);
   const overlayPushed = aUseRef(false);
   const poppingBack = aUseRef(false);
   aUseEffect(() => {
@@ -167,13 +170,14 @@ function DTApp() {
       else if (exportOpen) setExportOpen(false);
       else if (detailDay != null) setDetailDay(null);
       else if (readDate) setReadDate(null);
+      else if (pastId) setPastId(null);
       else if (settings) setSettings(false);
       else if (exercise) setExercise(null);
       else if (checkin) setCheckin(null);
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
-  }, [overlayOpen, alarm, exportOpen, detailDay, readDate, settings, exercise, checkin]);
+  }, [overlayOpen, alarm, exportOpen, detailDay, readDate, pastId, settings, exercise, checkin]);
 
   const setReminders = (patch) => setState(s => ({
     ...s, reminders: { ...(s.reminders || dtDefaultReminders()), ...patch },
@@ -193,9 +197,13 @@ function DTApp() {
   };
 
   // ── export ──
-  const openExport = () => {
-    const canvas = dtBuildSummary(state, paletteKey, name);
+  const exportName = aUseRef('DescubrirTe-resumen.png');
+  const openExport = (src) => {
+    const from = src && src.entries ? src : state;
+    const canvas = dtBuildSummary(from, paletteKey, from === state ? name : (from.name || name));
     canvasRef.current = canvas;
+    exportName.current = from === state ? 'DescubrirTe-resumen.png'
+      : 'DescubrirTe-resumen-' + String(Object.values(from.dayDates || {}).sort()[0] || from.startDate.slice(0, 10)) + '.png';
     setExportImg(canvas.toDataURL('image/png'));
     setExportOpen(true);
   };
@@ -207,6 +215,7 @@ function DTApp() {
   };
   // Empezar una semana nueva: se conservan nombre, paleta y recordatorios.
   const startWeek = () => {
+    setArchive(dtArchiveJourney(stateRef.current));
     setState(s => ({ ...s, cycleLength: 7, entries: {}, dayDates: {}, currentDay: 1, usedDemo: false,
       onboarded: true, startDate: new Date().toISOString() }));
     setTab('home');
@@ -234,7 +243,15 @@ function DTApp() {
     setCheckin(null);
   };
   const loadDemo = () => { setState(s => dtSeedDemo(s)); setTab('patterns'); setSettings(false); };
-  const resetAll = () => { dtReset(); setState(dtDefaultState()); setTab('home'); setSettings(false); };
+  // Reiniciar: lo escrito pasa a "Semanas anteriores" (solo lectura). Se conservan nombre, paleta y alarmas.
+  const resetAll = () => {
+    const s = stateRef.current;
+    setArchive(dtArchiveJourney(s));
+    const fresh = { ...dtDefaultState(), name: s.name, palette: s.palette, reminders: s.reminders,
+      onboarded: !!s.onboarded, startDate: new Date().toISOString() };
+    dtSave(fresh);
+    setState(fresh); setTab('home'); setSettings(false);
+  };
 
   // theme vars
   const dev = DT_DEVICES[t.device] || DT_DEVICES.iPhone;
@@ -263,9 +280,9 @@ function DTApp() {
     if (tab === 'home') screen = <DTHome state={{ ...state, name }} decor={t.decor}
       onOpen={(m) => openCheckin(m)} onSettings={() => setSettings(true)}
       onExercise={() => openExercise()} />;
-    else if (tab === 'diary') screen = <DTDiary state={state} decor={t.decor} onOpenDate={(key, days) => setReadDate({ key, days })} />;
+    else if (tab === 'diary') screen = <DTDiary state={state} archive={archive} decor={t.decor} onOpenDate={(key, days) => setReadDate({ key, days })} />;
     else if (tab === 'journey') screen = <DTJourney state={state} decor={t.decor} onOpenDay={(d) => setDetailDay(d)} />;
-    else screen = <DTPatterns state={state} onLoadDemo={loadDemo} onExport={unlocked ? openExport : null} />;
+    else screen = <DTPatterns state={state} onLoadDemo={loadDemo} onExport={unlocked ? () => openExport() : null} />;
     content = (
       <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
         <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>{screen}</div>
@@ -286,11 +303,17 @@ function DTApp() {
               setName={setName} setStartDate={v => setState(s => ({ ...s, startDate: v }))}
               reminders={reminders} setReminders={setReminders} toggleReminders={toggleReminders}
               notifyState={notifyState} setNotifyState={setNotifyState} alarmStatus={alarmStatus}
-              paletteKey={paletteKey} setPalette={setPalette} inst={inst} onReset={resetAll} />
+              paletteKey={paletteKey} setPalette={setPalette} inst={inst} onReset={resetAll}
+              archive={archive} onOpenPast={setPastId} />
+
+            <DTSheet open={!!past} onClose={() => setPastId(null)}
+              title={past ? `Semana ${archive.indexOf(past) + 1}` : ''}>
+              {past && <DTPastRead past={past} onDownload={() => openExport(past)} />}
+            </DTSheet>
 
             <DTSheet open={!!readDate} onClose={() => setReadDate(null)}
               title={readDate ? new Date(readDate.key + 'T12:00:00').toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' }).replace(/^./, c => c.toUpperCase()) : ''}>
-              {readDate && <DTDiaryRead state={state} days={readDate.days} />}
+              {readDate && <DTDiaryRead items={readDate.days} />}
             </DTSheet>
 
             {/* Day detail sheet */}
@@ -313,7 +336,7 @@ function DTApp() {
               )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <DTButton onClick={() => canvasRef.current &&
-                  dtDownloadCanvas(canvasRef.current, 'DescubrirTe-resumen.png')}>
+                  dtDownloadCanvas(canvasRef.current, exportName.current)}>
                   Guardar imagen (PNG)
                 </DTButton>
                 <DTButton variant="soft" onClick={() => canvasRef.current && dtPrintCanvas(canvasRef.current)}>

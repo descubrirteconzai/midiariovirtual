@@ -16,6 +16,19 @@ function dtDaysByDate(state) {
   }
   return map;
 }
+// Junta el viaje actual y las semanas anteriores: fecha → [{ src, d, week }].
+function dtEntriesByDate(state, archive) {
+  const map = {};
+  const add = (src, week) => {
+    for (let d = 1; d <= (src.cycleLength || 7); d++) {
+      const k = dtDayDate(src, d);
+      if (k && src.entries[d]) (map[k] = map[k] || []).push({ src, d, week });
+    }
+  };
+  (archive || []).forEach((p, i) => add(p, i + 1));
+  add(state, null);
+  return map;
+}
 // El día siguiente se abre recién cuando empieza una nueva fecha.
 function dtAdvanceDay(s) {
   const k = s.dayDates && s.dayDates[s.currentDay];
@@ -26,10 +39,10 @@ function dtAdvanceDay(s) {
 const DT_WEEK = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 const DT_DOT = { morning: 'var(--primary)', exercise: 'var(--soft)', night: 'var(--ink)' };
 
-function DTDiary({ state, decor, onOpenDate }) {
+function DTDiary({ state, archive, decor, onOpenDate }) {
   const today = dtLocalKey();
   const [cur, setCur] = React.useState(() => { const n = new Date(); return { y: n.getFullYear(), m: n.getMonth() }; });
-  const byDate = dtDaysByDate(state);
+  const byDate = dtEntriesByDate(state, archive);
   const first = new Date(cur.y, cur.m, 1);
   const lead = (first.getDay() + 6) % 7;
   const count = new Date(cur.y, cur.m + 1, 0).getDate();
@@ -75,7 +88,7 @@ function DTDiary({ state, decor, onOpenDate }) {
               const isToday = key === today;
               const future = key > today;
               const marks = { morning: false, exercise: false, night: false };
-              (days || []).forEach(n => { const e = state.entries[n] || {};
+              (days || []).forEach(it => { const e = it.src.entries[it.d] || {};
                 if (e.morning) marks.morning = true; if (e.exercise) marks.exercise = true; if (e.night) marks.night = true; });
               return (
                 <button key={i} disabled={!days} onClick={() => days && onOpenDate(key, days)}
@@ -112,13 +125,14 @@ function DTDiary({ state, decor, onOpenDate }) {
 }
 
 // Hoja de lectura: muestra lo escrito sin opción de editar.
-function DTDiaryRead({ state, days }) {
+function DTDiaryRead({ items }) {
+  const labeled = items.length > 1 || items.some(it => it.week);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
-      {days.map(d => (
-        <div key={d}>
-          {days.length > 1 && <DTEyebrow style={{ marginBottom: 12 }}>Día {d}</DTEyebrow>}
-          <DTDayDetail state={state} day={d} readOnly />
+      {items.map((it, i) => (
+        <div key={i}>
+          {labeled && <DTEyebrow style={{ marginBottom: 12 }}>{it.week ? `Semana ${it.week} · ` : ''}Día {it.d}</DTEyebrow>}
+          <DTDayDetail state={it.src} day={it.d} readOnly />
         </div>
       ))}
       <p style={{ fontFamily: 'var(--f-sans)', fontSize: 13, color: 'var(--ink-faint)', textAlign: 'center', margin: 0 }}>
@@ -128,4 +142,4 @@ function DTDiaryRead({ state, days }) {
   );
 }
 
-Object.assign(window, { dtDayDate, dtDaysByDate, dtAdvanceDay, DTDiary, DTDiaryRead });
+Object.assign(window, { dtDayDate, dtDaysByDate, dtEntriesByDate, dtAdvanceDay, DTDiary, DTDiaryRead });
