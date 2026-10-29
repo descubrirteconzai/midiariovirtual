@@ -1,0 +1,13 @@
+# Material de origen y capturas de trabajo (no hace falta publicarlos)
+uploads/
+screenshots/
+
+# Sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores
+.vscode/
+.idea/
+*.swp
